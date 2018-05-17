@@ -33,7 +33,7 @@ class StoryView extends Component {
     const token = localStorage.getItem(id);
     this.props.actions.activateStory({storyId: id, userId, token})
     .then((res) => {
-      if (res.error && res.error.response.data.auth === false) {
+      if (res.error && res.error.response && res.error.response.data && res.error.response.data.auth === false) {
         this.props.actions.openLoginStoryModal({storyId: id});
       }
     });
@@ -59,7 +59,7 @@ class StoryView extends Component {
             <div style={{border: '1px solid', width: '30%', float: 'left', marginRight: '20px'}}>
               {
                 Object.keys(users).map((id, index) => {
-                  return <li key={index}>{id} - {users[id]}</li>
+                  return <li key={index}>{id} - {users[id].location} - {users[id].blockId}</li>
                 })
               }
             </div>

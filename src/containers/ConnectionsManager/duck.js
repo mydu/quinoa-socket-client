@@ -13,6 +13,7 @@ const ENTER_STORY = 'ENTER_STORY';
 const LEAVE_STORY = 'LEAVE_STORY';
 const ENTER_BLOCK = 'ENTER_BLOCK';
 const LEAVE_BLOCK = 'LEAVE_BLOCK';
+const IDLE_BLOCK = 'IDLE_BLOCK';
 
 const DISCONNECT = 'DISCONNECT';
 
@@ -48,6 +49,16 @@ export const leaveStory = payload => ({
 
 export const enterBlock = payload => ({
   type: ENTER_BLOCK,
+  payload,
+  meta: {
+    remote: true,
+    broadcast: true,
+    room: payload.storyId,
+  },
+});
+
+export const idleBlock = payload => ({
+  type: IDLE_BLOCK,
   payload,
   meta: {
     remote: true,
@@ -95,6 +106,9 @@ function user(state = USER_DEFAULT_STATE, action) {
 function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
   const { payload } = action;
   let users;
+  const DEFAULT_LOCKING = {
+    location: 'summary',
+  };
   switch (action.type) {
     case INIT_STATE:
       return payload.connections;
@@ -108,7 +122,7 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
           ...state[payload.storyId],
           users: {
             ...users,
-            [payload.userId]: 'summary',
+            [payload.userId]: DEFAULT_LOCKING,
           },
         },
       };
@@ -132,7 +146,11 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
           ...state[payload.storyId],
           users: {
             ...users,
-            [payload.userId]: payload.sectionId,
+            [payload.userId]: {
+              blockId: payload.sectionId,
+              status: 'active',
+              location: 'section',
+            },
           },
         },
       };
@@ -145,7 +163,26 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
           ...state[payload.storyId],
           users: {
             ...users,
-            [payload.userId]: payload.blockId,
+            [payload.userId]: {
+              ...payload,
+              status: 'active',
+            },
+          },
+        },
+      };
+    case IDLE_BLOCK:
+    case `${IDLE_BLOCK}_BROADCAST`:
+      users = (state[payload.storyId] && state[payload.storyId].users) || {};
+      return {
+        ...state,
+        [payload.storyId]: {
+          ...state[payload.storyId],
+          users: {
+            ...users,
+            [payload.userId]: {
+              ...payload,
+              status: 'idle',
+            },
           },
         },
       };
@@ -160,7 +197,7 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
           ...state[payload.storyId],
           users: {
             ...users,
-            [payload.userId]: 'summary',
+            [payload.userId]: DEFAULT_LOCKING,
           },
         },
       };

@@ -25,7 +25,6 @@ export const updateSection = payload => ({
   },
 });
 
-
 export const deleteSection = payload => ({
   type: DELETE_SECTION,
   payload,

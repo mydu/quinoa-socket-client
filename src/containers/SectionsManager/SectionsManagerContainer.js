@@ -48,8 +48,16 @@ class SectionsManager extends Component {
   }
   render() {
     const {storyId, userId, sections, connectionsMap} = this.props;
-    const {users} = connectionsMap[storyId];
-    const sectionUsers = invert(users);
+    const { users } = connectionsMap[storyId];
+    const usersList = Object.keys(users)
+                      .map((id) => {
+                        return {userId: id, ...users[id]}
+                      })
+                      .filter((d) => d.location === 'section');
+
+    const sectionsMap = usersList.reduce((result, user) =>  ({...result, [user.blockId]: user}), {});
+    console.log(usersList);
+    console.log(sectionsMap);
     return (
       <div style={{border: '1px solid', float: 'left', marginRight: '20px'}}>
         <button onClick={this.createSection}>add section</button>
@@ -59,7 +67,10 @@ class SectionsManager extends Component {
               this.props.actions.deleteSection({sectionId: id, storyId, userId});
             }
             const enterSection = () => {
-              this.props.actions.enterBlock({blockId: id, storyId, userId});
+              this.props.actions.enterBlock({blockId: id, storyId, userId, location: 'section'});
+            }
+            const idleSection = () => {
+              this.props.actions.idleBlock({blockId: id, storyId, userId, location: 'section'});
             }
             const leaveSection = () => {
               this.props.actions.leaveBlock({blockId: id, storyId, userId});
@@ -68,18 +79,20 @@ class SectionsManager extends Component {
               <div key={index}>
                 <span>section: {id}</span>
                 {
-                  sectionUsers[id] === userId &&
+                  sectionsMap[id] &&
+                  sectionsMap[id].userId === userId &&
                   <span>
                     <button onClick={leaveSection}>leave section</button>
                     <button onClick={deleteSection}>delete section</button>
                   </span>
                 }
                 {
-                  sectionUsers[id] !== userId &&
-                  sectionUsers[id] !== undefined &&
-                  <span style={{color: 'red'}}>-locked</span>
+                  sectionsMap[id] &&
+                  sectionsMap[id].userId !== userId &&
+                  <span style={{color: 'red'}}>-{sectionsMap[id].status}
+                  </span>
                 }
-                {sectionUsers[id] === undefined && <button onClick={enterSection}>enter section</button>}
+                {sectionsMap[id] === undefined && <button onClick={enterSection}>enter section</button>}
               </div>
             )
           })
