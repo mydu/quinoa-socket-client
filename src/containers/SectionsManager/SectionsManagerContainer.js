@@ -48,7 +48,7 @@ class SectionsManager extends Component {
   }
   render() {
     const {storyId, userId, sections, connectionsMap} = this.props;
-    const {users, request} = connectionsMap[storyId];
+    const {users} = connectionsMap[storyId];
     const sectionUsers = invert(users);
     return (
       <div style={{border: '1px solid', float: 'left', marginRight: '20px'}}>
@@ -64,14 +64,6 @@ class SectionsManager extends Component {
             const leaveSection = () => {
               this.props.actions.leaveSection({sectionId: id, storyId, userId});
             }
-            const requestSection = () => {
-              const receiverId = sectionUsers[id];
-              this.props.actions.requestSection({sectionId: id, storyId, receiverId, userId})
-            }
-            const releaseSection = () => {
-              const requesterId = request.userId;
-              this.props.actions.releaseSection({sectionId: id, requesterId, storyId, userId});
-            }
             return (
               <div key={index}>
                 <span>section: {id}</span>
@@ -79,14 +71,13 @@ class SectionsManager extends Component {
                   sectionUsers[id] === userId &&
                   <span>
                     <button onClick={leaveSection}>leave section</button>
-                    {request && request.userId && <button onClick={releaseSection}>release section {request.userId} is requesting</button>}
                     <button onClick={deleteSection}>delete section</button>
                   </span>
                 }
                 {
                   sectionUsers[id] !== userId &&
                   sectionUsers[id] !== undefined &&
-                  <span style={{color: 'red'}}>-locked <button onClick={requestSection}>ask to edit</button></span>
+                  <span style={{color: 'red'}}>-locked</span>
                 }
                 {sectionUsers[id] === undefined && <button onClick={enterSection}>enter section</button>}
               </div>

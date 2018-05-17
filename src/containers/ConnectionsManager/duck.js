@@ -131,20 +131,6 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
         },
       };
 
-    case RELEASE_SECTION:
-    case `${RELEASE_SECTION}_BROADCAST`:
-      users = (state[payload.storyId] && state[payload.storyId].users) || {};
-      return {
-        ...state,
-        [payload.storyId]: {
-          ...state[payload.storyId],
-          users: {
-            ...users,
-            [payload.userId]: 'summary',
-            [payload.requesterId]: payload.sectionId,
-          },
-        },
-      };
     case DISCONNECT:
       const newState = { ...state };
       payload.rooms.forEach((room) => {
