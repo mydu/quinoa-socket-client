@@ -4,8 +4,6 @@
 export const CREATE_SECTION = 'CREATE_SECTION';
 export const UPDATE_SECTION = 'UPDATE_SECTION';
 export const DELETE_SECTION = 'DELETE_SECTION';
-export const ENTER_SECTION = 'ENTER_SECTION';
-export const LEAVE_SECTION = 'LEAVE_SECTION';
 
 export const createSection = payload => ({
   type: CREATE_SECTION,
@@ -27,25 +25,6 @@ export const updateSection = payload => ({
   },
 });
 
-export const enterSection = payload => ({
-  type: ENTER_SECTION,
-  payload,
-  meta: {
-    remote: true,
-    broadcast: true,
-    room: payload.storyId,
-  },
-});
-
-export const leaveSection = payload => ({
-  type: LEAVE_SECTION,
-  payload,
-  meta: {
-    remote: true,
-    broadcast: true,
-    room: payload.storyId,
-  },
-});
 
 export const deleteSection = payload => ({
   type: DELETE_SECTION,

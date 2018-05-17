@@ -4,13 +4,16 @@ import { post } from 'axios';
 
 import { serverUrl } from '../../../config.json';
 import { ACTIVATE_STORY } from '../StoriesManager/duck';
-import { CREATE_SECTION, DELETE_SECTION, ENTER_SECTION, LEAVE_SECTION } from '../SectionsManager/duck';
+import { CREATE_SECTION, DELETE_SECTION } from '../SectionsManager/duck';
 
 const SET_SOCKET_ID = 'SET_SOCKET_ID';
 const UPDATE_CONNECTIONS_NUMBER = 'UPDATE_CONNECTIONS_NUMBER';
 const INIT_STATE = 'INIT_STATE';
 const ENTER_STORY = 'ENTER_STORY';
 const LEAVE_STORY = 'LEAVE_STORY';
+const ENTER_BLOCK = 'ENTER_BLOCK';
+const LEAVE_BLOCK = 'LEAVE_BLOCK';
+
 const DISCONNECT = 'DISCONNECT';
 
 export const LOGIN_STORY = 'LOGIN_STORY';
@@ -35,6 +38,26 @@ export const enterStory = payload => ({
 
 export const leaveStory = payload => ({
   type: LEAVE_STORY,
+  payload,
+  meta: {
+    remote: true,
+    broadcast: true,
+    room: payload.storyId,
+  },
+});
+
+export const enterBlock = payload => ({
+  type: ENTER_BLOCK,
+  payload,
+  meta: {
+    remote: true,
+    broadcast: true,
+    room: payload.storyId,
+  },
+});
+
+export const leaveBlock = payload => ({
+  type: LEAVE_BLOCK,
   payload,
   meta: {
     remote: true,
@@ -102,8 +125,6 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
       };
     case CREATE_SECTION:
     case `${CREATE_SECTION}_BROADCAST`:
-    case ENTER_SECTION:
-    case `${ENTER_SECTION}_BROADCAST`:
       users = (state[payload.storyId] && state[payload.storyId].users) || {};
       return {
         ...state,
@@ -115,8 +136,21 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
           },
         },
       };
-    case LEAVE_SECTION:
-    case `${LEAVE_SECTION}_BROADCAST`:
+    case ENTER_BLOCK:
+    case `${ENTER_BLOCK}_BROADCAST`:
+      users = (state[payload.storyId] && state[payload.storyId].users) || {};
+      return {
+        ...state,
+        [payload.storyId]: {
+          ...state[payload.storyId],
+          users: {
+            ...users,
+            [payload.userId]: payload.blockId,
+          },
+        },
+      };
+    case LEAVE_BLOCK:
+    case `${LEAVE_BLOCK}_BROADCAST`:
     case DELETE_SECTION:
     case `${DELETE_SECTION}_BROADCAST`:
       users = (state[payload.storyId] && state[payload.storyId].users) || {};

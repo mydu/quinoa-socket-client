@@ -59,10 +59,10 @@ class SectionsManager extends Component {
               this.props.actions.deleteSection({sectionId: id, storyId, userId});
             }
             const enterSection = () => {
-              this.props.actions.enterSection({sectionId: id, storyId, userId});
+              this.props.actions.enterBlock({blockId: id, storyId, userId});
             }
             const leaveSection = () => {
-              this.props.actions.leaveSection({sectionId: id, storyId, userId});
+              this.props.actions.leaveBlock({blockId: id, storyId, userId});
             }
             return (
               <div key={index}>
