@@ -44,27 +44,32 @@ class SectionsManager extends Component {
       storyId,
       userId,
       section,
+      lastUpdateAt: new Date().getTime(),
     });
   }
   render() {
-    const {storyId, userId, sections, connectionsMap} = this.props;
-    const { users } = connectionsMap[storyId];
-    const usersList = Object.keys(users)
+    const {storyId, userId, sections, lockingMap} = this.props;
+    const { locks } = lockingMap[storyId];
+    const locksList = Object.keys(locks)
                       .map((id) => {
-                        return {userId: id, ...users[id]}
+                        return {userId: id, ...locks[id]}
                       })
                       .filter((d) => d.location === 'section');
 
-    const sectionsMap = usersList.reduce((result, user) =>  ({...result, [user.blockId]: user}), {});
-    console.log(usersList);
-    console.log(sectionsMap);
+    const sectionsMap = locksList.reduce((result, lock) => ({...result, [lock.blockId]: lock}), {});
+
     return (
       <div style={{border: '1px solid', float: 'left', marginRight: '20px'}}>
         <button onClick={this.createSection}>add section</button>
         {
           Object.keys(sections).map((id, index) => {
             const deleteSection = () => {
-              this.props.actions.deleteSection({sectionId: id, storyId, userId});
+              this.props.actions.deleteSection({
+                sectionId: id, storyId, userId,
+                lastUpdateAt: new Date().getTime()});
+            }
+            const updateSection = () => {
+              this.props.actions.updateSection({sectionId: id, storyId, lastUpdateAt: new Date().getTime()})
             }
             const enterSection = () => {
               this.props.actions.enterBlock({blockId: id, storyId, userId, location: 'section'});
@@ -83,6 +88,7 @@ class SectionsManager extends Component {
                   sectionsMap[id].userId === userId &&
                   <span>
                     <button onClick={leaveSection}>leave section</button>
+                    <button onClick={updateSection}>update section</button>
                     <button onClick={deleteSection}>delete section</button>
                   </span>
                 }
@@ -92,7 +98,9 @@ class SectionsManager extends Component {
                   <span style={{color: 'red'}}>-{sectionsMap[id].status}
                   </span>
                 }
-                {sectionsMap[id] === undefined && <button onClick={enterSection}>enter section</button>}
+                {
+                  sectionsMap[id] === undefined && <button onClick={enterSection}>enter section</button>
+                }
               </div>
             )
           })

@@ -50,16 +50,16 @@ class StoryView extends Component {
     this.props.actions.saveStory(activedStory.id, activedStory, token);
   }
   render() {
-    const {match, connectionsMap, activedStory} = this.props;
-    const users = (connectionsMap[match.params.id] && connectionsMap[match.params.id].users) || {};
+    const {match, lockingMap, activedStory} = this.props;
+    const locks = (lockingMap[match.params.id] && lockingMap[match.params.id].locks) || {};
     return (
         activedStory.id?
           <div>
             <div><button onClick={this.saveStory}>save story</button></div>
             <div style={{border: '1px solid', width: '30%', float: 'left', marginRight: '20px'}}>
               {
-                Object.keys(users).map((id, index) => {
-                  return <li key={index}>{id} - {users[id].location} - {users[id].blockId}</li>
+                Object.keys(locks).map((id, index) => {
+                  return <li key={index}>{id} - {locks[id].location} - {locks[id].blockId}</li>
                 })
               }
             </div>

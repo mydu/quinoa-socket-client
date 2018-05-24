@@ -34,9 +34,3 @@ export const deleteSection = payload => ({
     room: payload.storyId,
   },
 });
-
-// export default combineReducers({
-// });
-
-// export const selector = createStructuredSelector({
-// });

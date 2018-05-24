@@ -30,14 +30,14 @@ class Application extends Component {
   render() {
     const {
       props: {
-        connectionsNumber,
+        usersNumber,
         userId
       }
     } = this;
     return (
       <Router>
         <div>
-          <div>Active connections: {connectionsNumber}</div>
+          <div>Active connections: {usersNumber}</div>
           <div>User Id: {userId}</div>
           <GlobalUi />
           {userId &&

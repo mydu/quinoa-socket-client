@@ -151,6 +151,7 @@ function activeStory(state = ACTIVE_STORY_DEFAULT_STATE, action) {
           ...state.sections,
           [payload.sectionId]: payload.section,
         },
+        lastUpdateAt: payload.lastUpdateAt,
       };
     case DELETE_SECTION:
     case `${DELETE_SECTION}_BROADCAST`:
@@ -159,6 +160,7 @@ function activeStory(state = ACTIVE_STORY_DEFAULT_STATE, action) {
       return {
         ...state,
         sections: newSections,
+        lastUpdateAt: payload.lastUpdateAt,
       };
     default:
       return state;

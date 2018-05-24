@@ -59,7 +59,7 @@ class StoriesManager extends Component {
   }
 
   render() {
-    const {allStories, connectionsMap, userId} = this.props;
+    const {allStories, userId} = this.props;
     const storiesList = Object.keys(allStories).map((id) => allStories[id]);
     return (
       <div>

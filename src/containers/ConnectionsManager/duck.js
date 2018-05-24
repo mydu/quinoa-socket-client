@@ -7,7 +7,6 @@ import { ACTIVATE_STORY } from '../StoriesManager/duck';
 import { CREATE_SECTION, DELETE_SECTION } from '../SectionsManager/duck';
 
 const SET_SOCKET_ID = 'SET_SOCKET_ID';
-const UPDATE_CONNECTIONS_NUMBER = 'UPDATE_CONNECTIONS_NUMBER';
 const INIT_STATE = 'INIT_STATE';
 const ENTER_STORY = 'ENTER_STORY';
 const LEAVE_STORY = 'LEAVE_STORY';
@@ -15,16 +14,19 @@ const ENTER_BLOCK = 'ENTER_BLOCK';
 const LEAVE_BLOCK = 'LEAVE_BLOCK';
 const IDLE_BLOCK = 'IDLE_BLOCK';
 
-const DISCONNECT = 'DISCONNECT';
+const USER_CONNECTED = 'USER_CONNECTED';
+const USER_DISCONNECTING = 'USER_DISCONNECTING';
+const USER_DISCONNECTED = 'USER_DISCONNECTED';
+
 
 export const LOGIN_STORY = 'LOGIN_STORY';
 
-const USER_DEFAULT_STATE = {
+const USERS_DEFAULT_STATE = {
   userId: undefined,
-  connectionsNumber: 0,
+  count: 0,
 };
 
-const CONNECTIONS_DEFAULT_STATE = {};
+const LOCKING_DEFAULT_STATE = {};
 
 export const enterStory = payload => ({
   type: ENTER_STORY,
@@ -86,66 +88,80 @@ export const loginStory = payload => ({
   },
 });
 
-function user(state = USER_DEFAULT_STATE, action) {
+function users(state = USERS_DEFAULT_STATE, action) {
+  const { payload } = action;
   switch (action.type) {
     case SET_SOCKET_ID:
       return {
         ...state,
         userId: action.payload,
       };
-    case UPDATE_CONNECTIONS_NUMBER:
+    case USER_CONNECTED:
+    case USER_DISCONNECTED:
       return {
         ...state,
-        connectionsNumber: action.number,
+        ...payload.connections.users,
       };
     default:
       return state;
   }
 }
 
-function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
+function locking(state = LOCKING_DEFAULT_STATE, action) {
   const { payload } = action;
-  let users;
+  let locks;
   const DEFAULT_LOCKING = {
     location: 'summary',
   };
   switch (action.type) {
-    case INIT_STATE:
-      return payload.connections;
-    case ENTER_STORY:
-    case `${ACTIVATE_STORY}_SUCCESS`:
-    case `${ENTER_STORY}_BROADCAST`:
-      users = (state[payload.storyId] && state[payload.storyId].users) || {};
+    // case USER_CONNECTED:
+    //   return payload.connections.locking;
+    case `${ENTER_STORY}_INIT`:
+      locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
       return {
         ...state,
         [payload.storyId]: {
           ...state[payload.storyId],
-          users: {
-            ...users,
+          locks: {
+            ...locks,
+            ...payload.locks,
+          },
+        },
+      };
+    case ENTER_STORY:
+    case `${ACTIVATE_STORY}_SUCCESS`:
+    case `${ENTER_STORY}_BROADCAST`:
+      locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
+      return {
+        ...state,
+        [payload.storyId]: {
+          ...state[payload.storyId],
+          locks: {
+            ...locks,
             [payload.userId]: DEFAULT_LOCKING,
           },
         },
       };
     case LEAVE_STORY:
     case `${LEAVE_STORY}_BROADCAST`:
-      users = (state[payload.storyId] && state[payload.storyId].users) || {};
-      delete users[payload.userId];
+      locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
+      delete locks[payload.userId];
       return {
         ...state,
         [payload.storyId]: {
           ...state[payload.storyId],
-          users,
+          locks,
         },
       };
     case CREATE_SECTION:
     case `${CREATE_SECTION}_BROADCAST`:
-      users = (state[payload.storyId] && state[payload.storyId].users) || {};
+      locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
       return {
         ...state,
         [payload.storyId]: {
           ...state[payload.storyId],
-          users: {
-            ...users,
+          locks: {
+            ...locks,
             [payload.userId]: {
               blockId: payload.sectionId,
               status: 'active',
@@ -154,15 +170,15 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
           },
         },
       };
-    case ENTER_BLOCK:
+    // case ENTER_BLOCK:
     case `${ENTER_BLOCK}_BROADCAST`:
-      users = (state[payload.storyId] && state[payload.storyId].users) || {};
+      locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
       return {
         ...state,
         [payload.storyId]: {
           ...state[payload.storyId],
-          users: {
-            ...users,
+          locks: {
+            ...locks,
             [payload.userId]: {
               ...payload,
               status: 'active',
@@ -172,13 +188,13 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
       };
     case IDLE_BLOCK:
     case `${IDLE_BLOCK}_BROADCAST`:
-      users = (state[payload.storyId] && state[payload.storyId].users) || {};
+      locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
       return {
         ...state,
         [payload.storyId]: {
           ...state[payload.storyId],
-          users: {
-            ...users,
+          locks: {
+            ...locks,
             [payload.userId]: {
               ...payload,
               status: 'idle',
@@ -190,22 +206,22 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
     case `${LEAVE_BLOCK}_BROADCAST`:
     case DELETE_SECTION:
     case `${DELETE_SECTION}_BROADCAST`:
-      users = (state[payload.storyId] && state[payload.storyId].users) || {};
+      locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
       return {
         ...state,
         [payload.storyId]: {
           ...state[payload.storyId],
-          users: {
-            ...users,
+          locks: {
+            ...locks,
             [payload.userId]: DEFAULT_LOCKING,
           },
         },
       };
 
-    case DISCONNECT:
+    case USER_DISCONNECTING:
       const newState = { ...state };
       payload.rooms.forEach((room) => {
-        delete newState[room].users[payload.userId];
+        delete newState[room].locks[payload.userId];
       });
       return newState;
     default:
@@ -214,16 +230,16 @@ function connections(state = CONNECTIONS_DEFAULT_STATE, action) {
 }
 
 export default combineReducers({
-  connections,
-  user,
+  locking,
+  users,
 });
 
-const userId = state => state.user.userId;
-const connectionsNumber = state => state.user.connectionsNumber;
-const connectionsMap = state => state.connections;
+const userId = state => state.users.userId;
+const usersNumber = state => state.users.count;
+const lockingMap = state => state.locking;
 
 export const selector = createStructuredSelector({
   userId,
-  connectionsNumber,
-  connectionsMap,
+  usersNumber,
+  lockingMap,
 });
