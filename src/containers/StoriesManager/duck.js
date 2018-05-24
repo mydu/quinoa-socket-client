@@ -11,6 +11,12 @@ import {
   DELETE_SECTION,
 } from '../SectionsManager/duck';
 
+import {
+  CREATE_RESOURCE,
+  UPDATE_RESOURCE,
+  DELETE_RESOURCE,
+} from '../ResourcesManager/duck';
+
 const INIT_STATE = 'INIT_STATE';
 const CREATE_STORY = 'CREATE_STORY';
 const SAVE_STORY = 'SAVE_STORY';
@@ -160,6 +166,27 @@ function activeStory(state = ACTIVE_STORY_DEFAULT_STATE, action) {
       return {
         ...state,
         sections: newSections,
+        lastUpdateAt: payload.lastUpdateAt,
+      };
+    case CREATE_RESOURCE:
+    case UPDATE_RESOURCE:
+    case `${CREATE_RESOURCE}_BROADCAST`:
+    case `${UPDATE_RESOURCE}_BROADCAST`:
+      return {
+        ...state,
+        resources: {
+          ...state.resources,
+          [payload.resourceId]: payload.resource,
+        },
+        lastUpdateAt: payload.lastUpdateAt,
+      };
+    case DELETE_RESOURCE:
+    case `${DELETE_RESOURCE}_BROADCAST`:
+      const newResources = { ...state.resources };
+      delete newSections[payload.resourceId];
+      return {
+        ...state,
+        resources: newResources,
         lastUpdateAt: payload.lastUpdateAt,
       };
     default:

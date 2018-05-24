@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import * as storiesDuck from '../StoriesManager/duck';
 import * as connectionsDuck from '../ConnectionsManager/duck';
 import SectionsManager from '../SectionsManager/SectionsManagerContainer';
+import ResourcesManager from '../ResourcesManager/ResourcesManagerContainer';
 
 @connect(
   state => ({
@@ -57,6 +58,7 @@ class StoryView extends Component {
           <div>
             <div><button onClick={this.saveStory}>save story</button></div>
             <div style={{border: '1px solid', width: '30%', float: 'left', marginRight: '20px'}}>
+              <li>userId - location - blockId</li>
               {
                 Object.keys(locks).map((id, index) => {
                   return <li key={index}>{id} - {locks[id].location} - {locks[id].blockId}</li>
@@ -68,15 +70,8 @@ class StoryView extends Component {
                 <SectionsManager storyId={match.params.id} sections={activedStory.sections} />
             }
             {
-              /*activedStory.resources &&
-                <div style={{border: '1px solid', float: 'left'}}>
-                  <button>add resource</button>
-                  {
-                    Object.keys(activedStory.resources).map((id, index) => {
-                      return <div key={index}>resource: {id}</div>
-                    })
-                  }
-                </div>*/
+              activedStory.resources &&
+                <ResourcesManager storyId={match.params.id} resources={activedStory.resources} />
             }
           </div> :
           <span>story not exist</span>
