@@ -1,6 +1,8 @@
 import { combineReducers } from 'redux';
 import { createStructuredSelector } from 'reselect';
 
+import { ENTER_BLOCK } from '../ConnectionsManager/duck';
+
 export const CREATE_RESOURCE = 'CREATE_RESOURCE';
 export const UPDATE_RESOURCE = 'UPDATE_RESOURCE';
 export const DELETE_RESOURCE = 'DELETE_RESOURCE';
@@ -53,12 +55,21 @@ const RESOURCES_UI_DEFAULT_STATE = {
 };
 
 function resourcesUi(state = RESOURCES_UI_DEFAULT_STATE, action) {
+  const { payload } = action;
   switch (action.type) {
     case OPEN_RESOURCE_MODAL:
       return {
         ...state,
         isResourceModalOpen: true,
       };
+    case `${ENTER_BLOCK}_SUCCESS`:
+      if (payload.location === 'resource') {
+        return {
+          ...state,
+          isResourceModalOpen: true,
+        };
+      }
+      return state;
     case CLOSE_RESOURCE_MODAL:
     case `${CREATE_RESOURCE}_SUCCESS`:
       return {

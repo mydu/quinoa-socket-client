@@ -17,7 +17,6 @@ import {
   DELETE_RESOURCE,
 } from '../ResourcesManager/duck';
 
-const INIT_STATE = 'INIT_STATE';
 const CREATE_STORY = 'CREATE_STORY';
 const SAVE_STORY = 'SAVE_STORY';
 const DELETE_STORY = 'DELETE_STORY';
@@ -183,7 +182,7 @@ function activeStory(state = ACTIVE_STORY_DEFAULT_STATE, action) {
     case DELETE_RESOURCE:
     case `${DELETE_RESOURCE}_BROADCAST`:
       const newResources = { ...state.resources };
-      delete newSections[payload.resourceId];
+      delete newResources[payload.resourceId];
       return {
         ...state,
         resources: newResources,

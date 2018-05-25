@@ -7,10 +7,9 @@ import { ACTIVATE_STORY } from '../StoriesManager/duck';
 import { CREATE_SECTION, DELETE_SECTION } from '../SectionsManager/duck';
 
 const SET_SOCKET_ID = 'SET_SOCKET_ID';
-const INIT_STATE = 'INIT_STATE';
 const ENTER_STORY = 'ENTER_STORY';
 const LEAVE_STORY = 'LEAVE_STORY';
-const ENTER_BLOCK = 'ENTER_BLOCK';
+export const ENTER_BLOCK = 'ENTER_BLOCK';
 const LEAVE_BLOCK = 'LEAVE_BLOCK';
 const IDLE_BLOCK = 'IDLE_BLOCK';
 
@@ -170,7 +169,7 @@ function locking(state = LOCKING_DEFAULT_STATE, action) {
           },
         },
       };
-    // case ENTER_BLOCK:
+    case `${ENTER_BLOCK}_SUCCESS`:
     case `${ENTER_BLOCK}_BROADCAST`:
       locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
       return {

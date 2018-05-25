@@ -16,7 +16,7 @@ import * as connectionsDuck from '../ConnectionsManager/duck';
 
 @connect(
   state => ({
-    // ...duck.selector(state.sections),
+    ...duck.selector(state.resources),
     ...connectionsDuck.selector(state.connections)
   }),
   dispatch => ({
@@ -59,7 +59,6 @@ class ResourcesManager extends Component {
                       .filter((d) => d.location === 'resource');
 
     const resourcesMap = locksList.reduce((result, lock) => ({...result, [lock.blockId]: lock}), {});
-
     return (
       <div style={{border: '1px solid', float: 'left', marginRight: '20px'}}>
         <button onClick={this.createResource}>add resource</button>
@@ -71,10 +70,9 @@ class ResourcesManager extends Component {
                 lastUpdateAt: new Date().getTime()});
             }
             const updateResource = () => {
-              this.props.actions.updateResource({sectionId: id, storyId, lastUpdateAt: new Date().getTime()})
+              this.props.actions.updateResource({resourceId: id, storyId, lastUpdateAt: new Date().getTime()})
             }
-            const openResourceModal = () => {
-              this.props.actions.openResourceModal();
+            const editResource = () => {
               this.props.actions.enterBlock({blockId: id, storyId, userId, location: 'resource'});
             }
             const closeResourceModal = () => {
@@ -93,7 +91,7 @@ class ResourcesManager extends Component {
                 {
                   resourcesMap[id] === undefined &&
                     <span>
-                      <button onClick={openResourceModal}>edit resource</button>
+                      <button onClick={editResource}>edit resource</button>
                       <button onClick={deleteResource}>delete resource</button>
                     </span>
                 }
