@@ -1,11 +1,24 @@
 import { combineReducers } from 'redux';
 import { createStructuredSelector } from 'reselect';
+import { put, delete as del } from 'axios';
+
+import { csvParse } from 'd3-dsv';
+import { v4 as uuid } from 'uuid';
 
 import { ENTER_BLOCK } from '../ConnectionsManager/duck';
+import { createDefaultResource } from '../../helpers/schemaUtils';
+import { getFileAsText, loadImage } from '../../helpers/fileLoader';
 
 export const CREATE_RESOURCE = 'CREATE_RESOURCE';
 export const UPDATE_RESOURCE = 'UPDATE_RESOURCE';
 export const DELETE_RESOURCE = 'DELETE_RESOURCE';
+
+export const UPLOAD_RESOURCE = 'UPLOAD_RESOURCE';
+export const DELETE_UPLOADED_RESOURCE = 'DELETE_UPLOADED_RESOURCE';
+
+const START_NEW_RESOURCE = 'START_NEW_RESOURCE';
+const SET_RESOURCE_CANDIDATE_TYPE = 'SET_RESOURCE_CANDIDATE_TYPE';
+const SUBMIT_RESOURCE_DATA = 'SUBMIT_RESOURCE_DATA';
 
 const OPEN_RESOURCE_MODAL = 'OPEN_RESOURCE_MODAL';
 const CLOSE_RESOURCE_MODAL = 'CLOSE_RESOURCE_MODAL';
@@ -17,6 +30,24 @@ export const createResource = payload => ({
     remote: true,
     broadcast: true,
     room: payload.storyId,
+  },
+});
+
+export const uploadResource = payload => ({
+  type: UPLOAD_RESOURCE,
+  payload,
+  promise: () => {
+    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resourceId}`;
+    return put(serverRequestUrl, payload);
+  },
+});
+
+export const deleteUploadedResource = payload => ({
+  type: DELETE_UPLOADED_RESOURCE,
+  payload,
+  promise: () => {
+    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resourceId}`;
+    return del(serverRequestUrl, payload);
   },
 });
 
@@ -40,6 +71,46 @@ export const deleteResource = payload => ({
   },
 });
 
+export const startNewResource = payload => ({
+  type: START_NEW_RESOURCE,
+  payload,
+});
+
+export const setResoruceCandidateType = payload => ({
+  type: SET_RESOURCE_CANDIDATE_TYPE,
+  payload,
+});
+
+export const submitResourceData = payload => ({
+  type: SUBMIT_RESOURCE_DATA,
+  promise: () =>
+    new Promise((resolve, reject) => {
+      const { type, data } = payload;
+      switch (type) {
+        case 'bib':
+          return getFileAsText(data, (err, str) => {
+            resolve({ text: str, file: data });
+          });
+        case 'image':
+          return loadImage(data)
+            .then((base64) => {
+              resolve({ base64, file: data });
+            });
+        case 'table':
+          return getFileAsText(data, (err, str) => {
+            try {
+              const structuredData = csvParse(str);
+              resolve({ json: structuredData, file: data });
+            } catch (e) {
+              reject(e);
+            }
+          });
+        default:
+          return reject();
+      }
+    }),
+});
+
 export const openResourceModal = payload => ({
   type: OPEN_RESOURCE_MODAL,
   payload,
@@ -52,29 +123,67 @@ export const closeResourceModal = payload => ({
 
 const RESOURCES_UI_DEFAULT_STATE = {
   isResourceModalOpen: false,
+  resourceCandidateId: undefined,
+  resourceCandidate: undefined,
+  resourceCandidateType: 'bib',
 };
 
 function resourcesUi(state = RESOURCES_UI_DEFAULT_STATE, action) {
   const { payload } = action;
   switch (action.type) {
-    case OPEN_RESOURCE_MODAL:
+    case START_NEW_RESOURCE:
+      const id = uuid();
+      const defaultResource = createDefaultResource();
+      const resourceCandidate = {
+        ...defaultResource,
+        id,
+      };
       return {
         ...state,
         isResourceModalOpen: true,
+        resourceCandidate,
+      };
+    case SET_RESOURCE_CANDIDATE_TYPE:
+      return {
+        ...state,
+        resourceCandidateType: payload,
+        resourceCandidate: {
+          ...state.resourceCandidate,
+          metadata: {
+            ...state.resourceCandidate.metadata,
+            type: payload,
+          },
+        },
+      };
+    case `${SUBMIT_RESOURCE_DATA}_SUCCESS`:
+      return {
+        ...state,
+        resourceCandidate: {
+          ...state.resourceCandidate,
+          data: action.result,
+        },
       };
     case `${ENTER_BLOCK}_SUCCESS`:
       if (payload.location === 'resource') {
         return {
           ...state,
           isResourceModalOpen: true,
+          resourceCandidateId: payload.blockId,
+          resourceCandidate: payload.resource,
+          resourceCandidateType: payload.resource.metadata.type,
         };
       }
       return state;
     case CLOSE_RESOURCE_MODAL:
-    case `${CREATE_RESOURCE}_SUCCESS`:
+    case CREATE_RESOURCE:
+    case UPDATE_RESOURCE:
+    case `${UPLOAD_RESOURCE}_SUCCESS`:
       return {
         ...state,
         isResourceModalOpen: false,
+        resourceCandidateId: undefined,
+        resourceCandidate: undefined,
+        resourceCandidateType: 'bib',
       };
     default:
       return state;
@@ -86,7 +195,13 @@ export default combineReducers({
 });
 
 const isResourceModalOpen = state => state.resourcesUi.isResourceModalOpen;
+const resourceCandidateId = state => state.resourcesUi.resourceCandidateId;
+const resourceCandidate = state => state.resourcesUi.resourceCandidate;
+const resourceCandidateType = state => state.resourcesUi.resourceCandidateType;
 
 export const selector = createStructuredSelector({
   isResourceModalOpen,
+  resourceCandidateId,
+  resourceCandidate,
+  resourceCandidateType,
 });

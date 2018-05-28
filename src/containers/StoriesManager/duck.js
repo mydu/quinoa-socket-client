@@ -28,12 +28,6 @@ const CLOSE_CREATE_STORY_MODAL = 'CLOSE_CREATE_STORY_MODAL';
 const OPEN_LOGIN_STORY_MODAL = 'OPEN_LOGIN_STORY_MODAL';
 const CLOSE_LOGIN_STORY_MODAL = 'CLOSE_LOGIN_STORY_MODAL';
 
-// export const createStory = ({ payload, password }) => ({
-//   type: CREATE_STORY,
-//   payload,
-//   password,
-// });
-
 export const createStory = ({ payload, password }) => ({
   type: CREATE_STORY,
   payload,
