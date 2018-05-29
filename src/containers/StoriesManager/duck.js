@@ -15,6 +15,8 @@ import {
   CREATE_RESOURCE,
   UPDATE_RESOURCE,
   DELETE_RESOURCE,
+  UPLOAD_RESOURCE,
+  DELETE_UPLOADED_RESOURCE,
 } from '../ResourcesManager/duck';
 
 const CREATE_STORY = 'CREATE_STORY';
@@ -173,7 +175,16 @@ function activeStory(state = ACTIVE_STORY_DEFAULT_STATE, action) {
         },
         lastUpdateAt: payload.lastUpdateAt,
       };
+    case `${UPLOAD_RESOURCE}_SUCCESS`:
+      return {
+        ...state,
+        resources: {
+          ...state.resources,
+          [payload.resourceId]: result.data,
+        },
+      };
     case DELETE_RESOURCE:
+    case `${DELETE_UPLOADED_RESOURCE}_SUCCESS`:
     case `${DELETE_RESOURCE}_BROADCAST`:
       const newResources = { ...state.resources };
       delete newResources[payload.resourceId];

@@ -1,9 +1,9 @@
 import { combineReducers } from 'redux';
 import { createStructuredSelector } from 'reselect';
-import { put, delete as del } from 'axios';
+import { post, put, delete as del } from 'axios';
 
 import { csvParse } from 'd3-dsv';
-import { v4 as uuid } from 'uuid';
+import { serverUrl } from '../../../config.json';
 
 import { ENTER_BLOCK } from '../ConnectionsManager/duck';
 import { createDefaultResource } from '../../helpers/schemaUtils';
@@ -37,8 +37,14 @@ export const uploadResource = payload => ({
   type: UPLOAD_RESOURCE,
   payload,
   promise: () => {
-    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resourceId}`;
-    return put(serverRequestUrl, payload);
+    const token = localStorage.getItem(payload.storyId);
+    const options = {
+      headers: {
+        'x-access-token': token,
+      },
+    };
+    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}`;
+    return post(serverRequestUrl, payload.resource, options);
   },
 });
 
@@ -46,8 +52,14 @@ export const deleteUploadedResource = payload => ({
   type: DELETE_UPLOADED_RESOURCE,
   payload,
   promise: () => {
+    const token = localStorage.getItem(payload.storyId);
+    const options = {
+      headers: {
+        'x-access-token': token,
+      },
+    };
     const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resourceId}`;
-    return del(serverRequestUrl, payload);
+    return del(serverRequestUrl, options);
   },
 });
 
@@ -83,24 +95,25 @@ export const setResoruceCandidateType = payload => ({
 
 export const submitResourceData = payload => ({
   type: SUBMIT_RESOURCE_DATA,
+  payload,
   promise: () =>
     new Promise((resolve, reject) => {
-      const { type, data } = payload;
+      const { type, file } = payload;
       switch (type) {
         case 'bib':
-          return getFileAsText(data, (err, str) => {
-            resolve({ text: str, file: data });
+          return getFileAsText(file, (err, text) => {
+            resolve({ text });
           });
         case 'image':
-          return loadImage(data)
+          return loadImage(file)
             .then((base64) => {
-              resolve({ base64, file: data });
+              resolve({ base64 });
             });
         case 'table':
-          return getFileAsText(data, (err, str) => {
+          return getFileAsText(file, (err, str) => {
             try {
-              const structuredData = csvParse(str);
-              resolve({ json: structuredData, file: data });
+              const json = csvParse(str);
+              resolve({ json });
             } catch (e) {
               reject(e);
             }
@@ -132,12 +145,7 @@ function resourcesUi(state = RESOURCES_UI_DEFAULT_STATE, action) {
   const { payload } = action;
   switch (action.type) {
     case START_NEW_RESOURCE:
-      const id = uuid();
-      const defaultResource = createDefaultResource();
-      const resourceCandidate = {
-        ...defaultResource,
-        id,
-      };
+      const resourceCandidate = createDefaultResource();
       return {
         ...state,
         isResourceModalOpen: true,
@@ -156,10 +164,28 @@ function resourcesUi(state = RESOURCES_UI_DEFAULT_STATE, action) {
         },
       };
     case `${SUBMIT_RESOURCE_DATA}_SUCCESS`:
+      let inferedMetadata = {};
+      if (payload.type === 'image' || payload.type === 'table') {
+        let title = payload && payload.file && payload.file.name && payload.file.name.split('.');
+        if (title) {
+          title.pop();
+          title = title.join('.');
+        }
+        inferedMetadata = {
+          title,
+          ext: payload && payload.file && payload.file.name && payload.file.name.split('.')[1],
+          fileName: payload && payload.file && payload.file.name && payload.file.name,
+          mimeType: payload && payload.file && payload.file.type,
+        };
+      }
       return {
         ...state,
         resourceCandidate: {
           ...state.resourceCandidate,
+          metadata: {
+            ...state.resourceCandidate.metadata,
+            ...inferedMetadata,
+          },
           data: action.result,
         },
       };

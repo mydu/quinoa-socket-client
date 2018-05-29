@@ -14,10 +14,10 @@ const sectionSchema = {
 };
 
 
-// export const validate = (schema, data) => {
-//   const val = ajv.compile(schema);
-//   return {valid: val(data), errors: val.errors};
-// };
+export const validate = (schema, data) => {
+  const val = ajv.compile(schema);
+  return { valid: val(data), errors: val.errors };
+};
 
 // export const validateStory = story => validate(storySchema, story);
 
