@@ -53,27 +53,41 @@ class ResourcesManager extends Component {
       },
       lastUpdateAt: new Date().getTime(),
     }
-    if(resourceCandidate.metadata.type === 'image' || resourceCandidate.metadata.type === 'table') {
-      this.props.actions.uploadResource(payload);
+    if((resourceCandidate.metadata.type === 'image' && resourceCandidate.data.base64) || (resourceCandidate.metadata.type === 'table' && resourceCandidate.data.json)) {
+      this.props.actions.uploadResource(payload, 'create');
     }
     else {
       this.props.actions.createResource(payload);
     }
   }
   updateResource() {
-    const {resourceCandidateId, storyId} = this.props;
-    this.props.actions.updateResource({resourceId: resourceCandidateId, storyId, lastUpdateAt: new Date().getTime()})
+    const {resourceCandidate, storyId, userId} = this.props;
+    const payload = {
+      resourceId: resourceCandidate.id,
+      storyId,
+      userId,
+      resource: resourceCandidate,
+      lastUpdateAt: new Date().getTime(),
+    }
+    if((resourceCandidate.metadata.type === 'image' && resourceCandidate.data.base64) || (resourceCandidate.metadata.type === 'table' && resourceCandidate.data.json)) {
+      this.props.actions.uploadResource(payload)
+      .then(() => this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId}));
+    }
+    else {
+      this.props.actions.updateResource(payload);
+      this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId});
+    }
   }
 
   closeResourceModal() {
-    const {resourceCandidateId, storyId, userId} = this.props;
+    const {resourceCandidate, storyId, userId} = this.props;
     this.props.actions.closeResourceModal();
-    if (resourceCandidateId) {
-      this.props.actions.leaveBlock({blockId: resourceCandidateId, storyId, userId});
+    if (resourceCandidate.id) {
+      this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId});
     }
   }
   render() {
-    const {storyId, userId, resources, lockingMap, resourceCandidateId, resourceCandidate, resourceCandidateType} = this.props;
+    const {storyId, userId, resources, lockingMap, resourceCandidate, resourceCandidateType} = this.props;
     const { locks } = lockingMap[storyId];
     const locksList = Object.keys(locks)
                       .map((id) => {
@@ -127,65 +141,66 @@ class ResourcesManager extends Component {
         <Modal
           onRequestClose={this.closeResourceModal}
           isOpen={this.props.isResourceModalOpen}>
-          { resourceCandidate && resourceCandidate.id && resourceCandidateType && <span>{resourceCandidateType}</span>}
-          { resourceCandidate && !resourceCandidate.id &&
-            <div>
-              <label>
-                <input
-                  type="radio"
-                  value="bib"
-                  onChange={()=>this.props.actions.setResoruceCandidateType('bib')}
-                  checked={resourceCandidate && resourceCandidate.metadata.type === 'bib'}
-                />
-                bib
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  value="image"
-                  onChange={()=>this.props.actions.setResoruceCandidateType('image')}
-                  checked={resourceCandidate && resourceCandidate.metadata.type === 'image'}
-                />
-                image
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  value="table"
-                  onChange={()=>this.props.actions.setResoruceCandidateType('table')}
-                  checked={resourceCandidate && resourceCandidate.metadata.type === 'table'}
-                />
-                table
-              </label>
-            </div>
-          }
-          <Dropzone
-            activeClassName="active"
-            onDrop={this.onDropFiles}>
-          </Dropzone>
-          {
-            resourceCandidateId ?
-            <button onClick={this.updateResource}>update resource</button> :
-            <button onClick={this.createResource}>create resource</button>
-          }
-          <aside>
-            <h2>Preview file</h2>
-            {
-              resourceCandidate &&
-              resourceCandidate.metadata.type === 'bib' &&
-              <pre>{resourceCandidate.data.text}</pre>
+            {resourceCandidate &&
+              <div>
+                { resourceCandidate.id && resourceCandidateType && <span>{resourceCandidateType}</span>}
+                { !resourceCandidate.id &&
+                  <div>
+                    <label>
+                      <input
+                        type="radio"
+                        value="bib"
+                        onChange={()=>this.props.actions.setResoruceCandidateType('bib')}
+                        checked={resourceCandidate && resourceCandidate.metadata.type === 'bib'}
+                      />
+                      bib
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="image"
+                        onChange={()=>this.props.actions.setResoruceCandidateType('image')}
+                        checked={resourceCandidate && resourceCandidate.metadata.type === 'image'}
+                      />
+                      image
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="table"
+                        onChange={()=>this.props.actions.setResoruceCandidateType('table')}
+                        checked={resourceCandidate && resourceCandidate.metadata.type === 'table'}
+                      />
+                      table
+                    </label>
+                  </div>
+                }
+                <Dropzone
+                  activeClassName="active"
+                  onDrop={this.onDropFiles}>
+                </Dropzone>
+                {
+                  resourceCandidate.id ?
+                  <button onClick={this.updateResource}>update resource</button> :
+                  <button onClick={this.createResource}>create resource</button>
+                }
+                <aside>
+                  <h2>Preview file</h2>
+                  {
+                    resourceCandidate.metadata.type === 'bib' &&
+                    <pre>{resourceCandidate.data.text}</pre>
+                  }
+                  {
+                    resourceCandidate.metadata.type === 'image' &&
+                    <img src={resourceCandidate.data.base64 || resourceCandidate.data.url}  />
+                  }
+                  {
+                    resourceCandidate.metadata.type === 'table' &&
+                    <pre>{JSON.stringify(resourceCandidate.data.json)}</pre>
+                  }
+                </aside>
+              </div>
             }
-            {
-              resourceCandidate &&
-              resourceCandidate.metadata.type === 'image' &&
-              <img src={resourceCandidate.data.base64 || resourceCandidate.data.url}  />
-            }
-            {
-              resourceCandidate &&
-              resourceCandidate.metadata.type === 'table' &&
-              <pre>{JSON.stringify(resourceCandidate.data.json)}</pre>
-            }
-          </aside>
         </Modal>
       </div>
     )

@@ -33,7 +33,7 @@ export const createResource = payload => ({
   },
 });
 
-export const uploadResource = payload => ({
+export const uploadResource = (payload, mode) => ({
   type: UPLOAD_RESOURCE,
   payload,
   promise: () => {
@@ -43,8 +43,13 @@ export const uploadResource = payload => ({
         'x-access-token': token,
       },
     };
-    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}`;
-    return post(serverRequestUrl, payload.resource, options);
+    let serverRequestUrl;
+    if (mode === 'create') {
+      serverRequestUrl = `${serverUrl}/resources/${payload.storyId}?userId=${payload.userId}`;
+      return post(serverRequestUrl, payload.resource, options);
+    }
+    serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resource.id}?userId=${payload.userId}`;
+    return put(serverRequestUrl, payload.resource, options);
   },
 });
 
@@ -58,7 +63,7 @@ export const deleteUploadedResource = payload => ({
         'x-access-token': token,
       },
     };
-    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resourceId}`;
+    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resourceId}?userId=${payload.userId}`;
     return del(serverRequestUrl, options);
   },
 });
@@ -136,7 +141,6 @@ export const closeResourceModal = payload => ({
 
 const RESOURCES_UI_DEFAULT_STATE = {
   isResourceModalOpen: false,
-  resourceCandidateId: undefined,
   resourceCandidate: undefined,
   resourceCandidateType: 'bib',
 };
@@ -194,7 +198,6 @@ function resourcesUi(state = RESOURCES_UI_DEFAULT_STATE, action) {
         return {
           ...state,
           isResourceModalOpen: true,
-          resourceCandidateId: payload.blockId,
           resourceCandidate: payload.resource,
           resourceCandidateType: payload.resource.metadata.type,
         };
@@ -207,7 +210,6 @@ function resourcesUi(state = RESOURCES_UI_DEFAULT_STATE, action) {
       return {
         ...state,
         isResourceModalOpen: false,
-        resourceCandidateId: undefined,
         resourceCandidate: undefined,
         resourceCandidateType: 'bib',
       };
@@ -221,13 +223,11 @@ export default combineReducers({
 });
 
 const isResourceModalOpen = state => state.resourcesUi.isResourceModalOpen;
-const resourceCandidateId = state => state.resourcesUi.resourceCandidateId;
 const resourceCandidate = state => state.resourcesUi.resourceCandidate;
 const resourceCandidateType = state => state.resourcesUi.resourceCandidateType;
 
 export const selector = createStructuredSelector({
   isResourceModalOpen,
-  resourceCandidateId,
   resourceCandidate,
   resourceCandidateType,
 });
