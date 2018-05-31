@@ -2,12 +2,10 @@ import { combineReducers } from 'redux';
 import { createStructuredSelector } from 'reselect';
 import { post, put, delete as del } from 'axios';
 
-import { csvParse } from 'd3-dsv';
 import { serverUrl } from '../../../config.json';
 
 import { ENTER_BLOCK } from '../ConnectionsManager/duck';
 import { createDefaultResource } from '../../helpers/schemaUtils';
-import { getFileAsText, loadImage } from '../../helpers/fileLoader';
 
 export const CREATE_RESOURCE = 'CREATE_RESOURCE';
 export const UPDATE_RESOURCE = 'UPDATE_RESOURCE';
@@ -106,23 +104,17 @@ export const submitResourceData = payload => ({
       const { type, file } = payload;
       switch (type) {
         case 'bib':
-          return getFileAsText(file, (err, text) => {
-            resolve({ text });
-          });
+          return loadFile('text', file)
+            .then(text => resolve({ text }))
+            .catch(e => reject(e));
         case 'image':
-          return loadImage(file)
-            .then((base64) => {
-              resolve({ base64 });
-            });
+          return loadImage('image', file)
+            .then(base64 => resolve({ base64 }))
+            .catch(e => reject(e));
         case 'table':
-          return getFileAsText(file, (err, str) => {
-            try {
-              const json = csvParse(str);
-              resolve({ json });
-            } catch (e) {
-              reject(e);
-            }
-          });
+          return loadFile('table', file)
+            .then(json => resolve({ json }))
+            .catch(e => reject(e));
         default:
           return reject();
       }

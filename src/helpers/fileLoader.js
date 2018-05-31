@@ -1,4 +1,4 @@
-export function loadImage(file) {
+export default function loadFile(type, file) {
   return new Promise((resolve, reject) => {
     let reader = new FileReader();
     reader.onload = (event) => {
@@ -9,21 +9,14 @@ export function loadImage(file) {
       reject(event.target.error);
       reader = undefined;
     };
-    reader.readAsDataURL(file);
+    switch (type) {
+      case 'image':
+        return reader.readAsDataURL(file);
+      case 'table':
+        const text = reader.readAsText(file);
+        return csvParse(text);
+      default:
+        return reader.readAsText(file);
+    }
   });
-}
-
-export function getFileAsText(fileToRead, callback) {
-  let reader = new FileReader();
-  // Handle errors load
-  reader.onload = (event) => {
-    callback(null, event.target.result);
-    reader = undefined;
-  };
-  reader.onerror = (event) => {
-    callback(event.target.error);
-    reader = undefined;
-  };
-  // Read file into memory as UTF-8
-  reader.readAsText(fileToRead);
 }

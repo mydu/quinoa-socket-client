@@ -10,6 +10,7 @@ import Dropzone from 'react-dropzone';
 
 import * as duck from './duck';
 import * as connectionsDuck from '../ConnectionsManager/duck';
+import loadFile from '../../helpers/fileLoader';
 
 // Modal.setAppElement('#mount');
 
@@ -34,10 +35,122 @@ class ResourcesManager extends Component {
     this.updateResource = this.updateResource.bind(this);
     this.closeResourceModal = this.closeResourceModal.bind(this);
     this.onDropFiles = this.onDropFiles.bind(this);
+    this.submitUploadResourceData = this.submitUploadResourceData.bind(this);
   }
+
+  submitUploadResourceData (file) {
+    return new Promise((resolve, reject) => {
+      const { storyId, userId } = this.props;
+      const { name } = file;
+      const extension = name.split('.').pop();
+      const id = uuid();
+      let title = file.name.split('.');
+      if (title) {
+        title.pop();
+        title = title.join('.');
+      }
+      let resource;
+      let payload;
+      const metadata = {
+        title,
+        ext: extension,
+        fileName: file.name,
+        mimeType: file.type,
+      };
+      const lastUpdateAt = new Date().getTime();
+      switch (extension) {
+        case 'png':
+        case 'jpg':
+        case 'jpeg':
+        case 'gif':
+          return loadFile('image', file)
+            .then((base64) => {
+              resource = {
+                id,
+                metadata: {
+                  ...metadata,
+                  type: 'image',
+                },
+                data: { base64 },
+              };
+              payload = {
+                resourceId: id,
+                resource,
+                storyId,
+                userId,
+                lastUpdateAt,
+              };
+              // serverRequestUrl = `${serverUrl}/resources/${storyId}?userId=${userId}`;
+              // return post(serverRequestUrl, resource, options);
+              return this.props.actions.uploadResource(payload, 'create');
+            })
+            .then(() => resolve({ id, success: true }))
+            .catch(() => reject({ id, success: false }));
+        case 'csv':
+        case 'tsv':
+          return loadFile('table', file)
+            .then((json) => {
+              resource = {
+                id,
+                metadata: {
+                  ...metadata,
+                  type: 'table',
+                },
+                data: { json },
+              };
+              payload = {
+                resourceId: id,
+                resource,
+                storyId,
+                userId,
+                lastUpdateAt,
+              };
+              return this.props.actions.uploadResource(payload, 'create');
+            })
+            .then(() => resolve({ id, success: true }))
+            .catch(() => reject({ id, success: false }));
+        default:
+          return loadFile('text', file)
+            .then((text) => {
+              resource = {
+                id,
+                metadata: {
+                  ...metadata,
+                  type: 'bib',
+                },
+                data: { text },
+              };
+              payload = {
+                resourceId: id,
+                resource,
+                storyId,
+                userId,
+                lastUpdateAt,
+              };
+              return this.props.actions.createResource(payload)
+            })
+            .then(() => resolve({ id, success: true }))
+            .catch(() => reject({ id, success: false }));
+      }
+    });
+  }
+
+  submitMultiResources(files) {
+    return new Promise((resolve, reject) => {
+      const resourcesPromise = files.map(file => this.submitUploadResourceData(file));
+      return Promise.all(resourcesPromise.map(p => p.catch(e => e)))
+        .then(res => resolve(res.filter(result => !result.success)))
+        .catch(err => reject(err));
+    });
+  }
+
   onDropFiles (files) {
     const {resourceCandidateType} = this.props;
-    this.props.actions.submitResourceData({type:resourceCandidateType, file:files[0]});
+    if(files.length === 1)
+      this.props.actions.submitResourceData({type:resourceCandidateType, file:files[0]});
+    else {
+      this.submitMultiResources(files);
+    }
   };
 
   createResource() {
@@ -138,6 +251,11 @@ class ResourcesManager extends Component {
             )
           })
         }
+        <Dropzone
+          activeClassName="active"
+          onDrop={this.onDropFiles}>
+          <p>submit multiple files</p>
+        </Dropzone>
         <Modal
           onRequestClose={this.closeResourceModal}
           isOpen={this.props.isResourceModalOpen}>
@@ -178,6 +296,7 @@ class ResourcesManager extends Component {
                 <Dropzone
                   activeClassName="active"
                   onDrop={this.onDropFiles}>
+                  <p>submit single file</p>
                 </Dropzone>
                 {
                   resourceCandidate.id ?

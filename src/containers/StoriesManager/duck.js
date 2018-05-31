@@ -182,6 +182,7 @@ function activeStory(state = ACTIVE_STORY_DEFAULT_STATE, action) {
           ...state.resources,
           [payload.resourceId]: result.data,
         },
+        lastUpdateAt: payload.lastUpdateAt,
       };
     case DELETE_RESOURCE:
     case `${DELETE_UPLOADED_RESOURCE}_SUCCESS`:
