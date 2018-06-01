@@ -85,7 +85,7 @@ class ResourcesManager extends Component {
               return this.props.actions.uploadResource(payload, 'create');
             })
             .then(() => resolve({ id, success: true }))
-            .catch(() => reject({ id, success: false }));
+            .catch(() => resolve({ id, success: false }));
         case 'csv':
         case 'tsv':
           return loadFile('table', file)
@@ -108,7 +108,7 @@ class ResourcesManager extends Component {
               return this.props.actions.uploadResource(payload, 'create');
             })
             .then(() => resolve({ id, success: true }))
-            .catch(() => reject({ id, success: false }));
+            .catch(() => resolve({ id, success: false }));
         default:
           return loadFile('text', file)
             .then((text) => {
@@ -127,21 +127,38 @@ class ResourcesManager extends Component {
                 userId,
                 lastUpdateAt,
               };
-              return this.props.actions.createResource(payload)
+              return this.props.actions.createResource(payload);
             })
             .then(() => resolve({ id, success: true }))
-            .catch(() => reject({ id, success: false }));
+            .catch(() => resolve({ id, success: false }));
       }
     });
   }
 
   submitMultiResources(files) {
-    return new Promise((resolve, reject) => {
-      const resourcesPromise = files.map(file => this.submitUploadResourceData(file));
-      return Promise.all(resourcesPromise.map(p => p.catch(e => e)))
-        .then(res => resolve(res.filter(result => !result.success)))
-        .catch(err => reject(err));
-    });
+    // return new Promise((resolve, reject) => {
+    //   const resourcesPromise = files.map(file => this.submitUploadResourceData(file));
+    //   return Promise.all(resourcesPromise.map(p => p.catch(e => e)))
+    //     .then(res => resolve(res.filter(result => !result.success)))
+    //     .catch(err => reject(err));
+    // });
+    let errors = [];
+    files.reduce((curr, next) => {
+      return curr.then(() =>
+        this.submitUploadResourceData(next)
+        .then((res) => {
+          if(res && !res.success) errors.push(res);
+        })
+      );
+    }, Promise.resolve())
+    .then(() => {
+      if(errors.length > 0) {
+        console.log("resource fail to upload")
+      }
+    })
+    .catch(() => {
+      console.log("resources fail to upload");
+    })
   }
 
   onDropFiles (files) {
