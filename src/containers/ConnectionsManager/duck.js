@@ -164,7 +164,7 @@ function locking(state = LOCKING_DEFAULT_STATE, action) {
             [payload.userId]: {
               blockId: payload.sectionId,
               status: 'active',
-              location: 'section',
+              location: 'sections',
             },
           },
         },

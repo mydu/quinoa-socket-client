@@ -54,7 +54,7 @@ class SectionsManager extends Component {
                       .map((id) => {
                         return {userId: id, ...locks[id]}
                       })
-                      .filter((d) => d.location === 'section');
+                      .filter((d) => d.location === 'sections');
 
     const sectionsMap = locksList.reduce((result, lock) => ({...result, [lock.blockId]: lock}), {});
 
@@ -72,10 +72,10 @@ class SectionsManager extends Component {
               this.props.actions.updateSection({sectionId: id, storyId, lastUpdateAt: new Date().getTime()})
             }
             const enterSection = () => {
-              this.props.actions.enterBlock({blockId: id, storyId, userId, location: 'section'});
+              this.props.actions.enterBlock({blockId: id, storyId, userId, location: 'sections'});
             }
             const idleSection = () => {
-              this.props.actions.idleBlock({blockId: id, storyId, userId, location: 'section'});
+              this.props.actions.idleBlock({blockId: id, storyId, userId, location: 'sections'});
             }
             const leaveSection = () => {
               this.props.actions.leaveBlock({blockId: id, storyId, userId});

@@ -223,7 +223,7 @@ class ResourcesManager extends Component {
                       .map((id) => {
                         return {userId: id, ...locks[id]}
                       })
-                      .filter((d) => d.location === 'resource');
+                      .filter((d) => d.location === 'resources');
 
     const resourcesMap = locksList.reduce((result, lock) => ({...result, [lock.blockId]: lock}), {});
     return (
@@ -246,7 +246,7 @@ class ResourcesManager extends Component {
               }
             }
             const editResource = () => {
-              this.props.actions.enterBlock({blockId: id, storyId, userId, location: 'resource', resource: resources[id]});
+              this.props.actions.enterBlock({blockId: id, storyId, userId, location: 'resources', resource: resources[id]});
             }
             return (
               <div key={index}>

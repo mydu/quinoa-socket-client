@@ -6,6 +6,7 @@ import { serverUrl } from '../../../config.json';
 
 import { ENTER_BLOCK } from '../ConnectionsManager/duck';
 import { createDefaultResource } from '../../helpers/schemaUtils';
+import loadFile from '../../helpers/fileLoader';
 
 export const CREATE_RESOURCE = 'CREATE_RESOURCE';
 export const UPDATE_RESOURCE = 'UPDATE_RESOURCE';
@@ -43,10 +44,10 @@ export const uploadResource = (payload, mode) => ({
     };
     let serverRequestUrl;
     if (mode === 'create') {
-      serverRequestUrl = `${serverUrl}/resources/${payload.storyId}?userId=${payload.userId}`;
+      serverRequestUrl = `${serverUrl}/resources/${payload.storyId}?userId=${payload.userId}&lastUpdateAt=${payload.lastUpdateAt}`;
       return post(serverRequestUrl, payload.resource, options);
     }
-    serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resource.id}?userId=${payload.userId}`;
+    serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resource.id}?userId=${payload.userId}&lastUpdateAt=${payload.lastUpdateAt}`;
     return put(serverRequestUrl, payload.resource, options);
   },
 });
@@ -61,7 +62,7 @@ export const deleteUploadedResource = payload => ({
         'x-access-token': token,
       },
     };
-    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resourceId}?userId=${payload.userId}`;
+    const serverRequestUrl = `${serverUrl}/resources/${payload.storyId}/${payload.resourceId}?userId=${payload.userId}&lastUpdateAt=${payload.lastUpdateAt}`;
     return del(serverRequestUrl, options);
   },
 });
@@ -108,7 +109,7 @@ export const submitResourceData = payload => ({
             .then(text => resolve({ text }))
             .catch(e => reject(e));
         case 'image':
-          return loadImage('image', file)
+          return loadFile('image', file)
             .then(base64 => resolve({ base64 }))
             .catch(e => reject(e));
         case 'table':
@@ -186,7 +187,7 @@ function resourcesUi(state = RESOURCES_UI_DEFAULT_STATE, action) {
         },
       };
     case `${ENTER_BLOCK}_SUCCESS`:
-      if (payload.location === 'resource') {
+      if (payload.location === 'resources') {
         return {
           ...state,
           isResourceModalOpen: true,
