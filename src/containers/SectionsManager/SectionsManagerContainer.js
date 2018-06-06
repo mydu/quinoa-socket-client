@@ -50,14 +50,18 @@ class SectionsManager extends Component {
   render() {
     const {storyId, userId, sections, lockingMap} = this.props;
     const { locks } = lockingMap[storyId];
+    // const locksList = Object.keys(locks)
+    //                   .map((id) => {
+    //                     return {userId: id, ...locks[id]}
+    //                   })
+    //                   .filter((d) => d.location === 'sections');
     const locksList = Object.keys(locks)
+                      .filter((id) => locks[id].sections !== undefined)
                       .map((id) => {
-                        return {userId: id, ...locks[id]}
-                      })
-                      .filter((d) => d.location === 'sections');
+                          return {userId: id, ...locks[id].sections}
+                      });
 
     const sectionsMap = locksList.reduce((result, lock) => ({...result, [lock.blockId]: lock}), {});
-
     return (
       <div style={{border: '1px solid', float: 'left', marginRight: '20px'}}>
         <button onClick={this.createSection}>add section</button>
@@ -66,6 +70,7 @@ class SectionsManager extends Component {
             const deleteSection = () => {
               this.props.actions.deleteSection({
                 sectionId: id, storyId, userId,
+                location: 'sections',
                 lastUpdateAt: new Date().getTime()});
             }
             const updateSection = () => {
@@ -78,7 +83,7 @@ class SectionsManager extends Component {
               this.props.actions.idleBlock({blockId: id, storyId, userId, location: 'sections'});
             }
             const leaveSection = () => {
-              this.props.actions.leaveBlock({blockId: id, storyId, userId});
+              this.props.actions.leaveBlock({blockId: id, storyId, userId, location: 'sections'});
             }
             return (
               <div key={index}>

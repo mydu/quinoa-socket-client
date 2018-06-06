@@ -201,11 +201,11 @@ class ResourcesManager extends Component {
     }
     if((resourceCandidate.metadata.type === 'image' && resourceCandidate.data.base64) || (resourceCandidate.metadata.type === 'table' && resourceCandidate.data.json)) {
       this.props.actions.uploadResource(payload)
-      .then(() => this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId}));
+      .then(() => this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId, location: 'resources'}));
     }
     else {
       this.props.actions.updateResource(payload);
-      this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId});
+      this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId, location: 'resources'});
     }
   }
 
@@ -213,17 +213,22 @@ class ResourcesManager extends Component {
     const {resourceCandidate, storyId, userId} = this.props;
     this.props.actions.closeResourceModal();
     if (resourceCandidate.id) {
-      this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId});
+      this.props.actions.leaveBlock({blockId: resourceCandidate.id, storyId, userId, location: 'resources'});
     }
   }
   render() {
     const {storyId, userId, resources, lockingMap, resourceCandidate, resourceCandidateType} = this.props;
     const { locks } = lockingMap[storyId];
+    // const locksList = Object.keys(locks)
+    //                   .map((id) => {
+    //                     return {userId: id, ...locks[id]}
+    //                   })
+    //                   .filter((d) => d.location === 'resources');
     const locksList = Object.keys(locks)
+                      .filter((id) => locks[id].resources !== undefined)
                       .map((id) => {
-                        return {userId: id, ...locks[id]}
-                      })
-                      .filter((d) => d.location === 'resources');
+                          return {userId: id, ...locks[id].resources}
+                      });
 
     const resourcesMap = locksList.reduce((result, lock) => ({...result, [lock.blockId]: lock}), {});
     return (
@@ -241,6 +246,7 @@ class ResourcesManager extends Component {
               else {
                 this.props.actions.deleteResource({
                   resourceId: id, storyId, userId,
+                  location: 'resources',
                   lastUpdateAt: new Date().getTime()
                 });
               }

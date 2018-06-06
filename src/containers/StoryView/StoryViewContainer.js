@@ -26,6 +26,8 @@ class StoryView extends Component {
   constructor(props) {
     super(props);
     this.saveStory = this.saveStory.bind(this);
+    this.editLocation = this.editLocation.bind(this);
+    this.leaveLocation = this.leaveLocation.bind(this);
   }
 
   componentDidMount() {
@@ -50,18 +52,74 @@ class StoryView extends Component {
     const token = localStorage.getItem(activedStory.id);
     this.props.actions.saveStory(activedStory.id, activedStory, token);
   }
+
+  editLocation (location) {
+    const {id} = this.props.match.params;
+    const {userId} = this.props;
+    this.props.actions.enterBlock({blockId: location, storyId: id, userId, location});
+  }
+
+  leaveLocation (location) {
+    const {id} = this.props.match.params;
+    const {userId} = this.props;
+    this.props.actions.leaveBlock({blockId: location, storyId: id, userId, location});
+  }
+
   render() {
-    const {match, lockingMap, activedStory} = this.props;
+    const {match, userId, lockingMap, activedStory} = this.props;
     const locks = (lockingMap[match.params.id] && lockingMap[match.params.id].locks) || {};
+
+    const sectionBlocksList = Object.keys(locks)
+                      .filter((id) => locks[id].sections !== undefined)
+                      .map((id) => {
+                          return {userId: id, ...locks[id].sections}
+                      });
+    const resourceBlocksList = Object.keys(locks)
+                  .filter((id) => locks[id].resources !== undefined)
+                  .map((id) => {
+                      return {userId: id, ...locks[id].resources}
+                  });
+
+    const cssLock = Object.keys(locks)
+                      .filter((id) => locks[id].settings !== undefined)
+                      .map((id) => {
+                        return {userId: id, ...locks[id].settings}
+                      })
+    const metadataLock = Object.keys(locks)
+                          .filter((id) => locks[id].metadata !== undefined)
+                          .map((id) => {
+                            return {userId: id, ...locks[id].metadata}
+                          })
+    const metadataMap = metadataLock.reduce((result, lock) => ({...result, [lock.location]: lock}), {});
+    const cssMap = cssLock.reduce((result, lock) => ({...result, [lock.location]: lock}), {});
     return (
         activedStory.id?
           <div>
             <div><button onClick={this.saveStory}>save story</button></div>
             <div style={{border: '1px solid', width: '30%', float: 'left', marginRight: '20px'}}>
               <li>userId - location - blockId</li>
+              <div>sections</div>
               {
-                Object.keys(locks).map((id, index) => {
-                  return <li key={index}>{id} - {locks[id].location} - {locks[id].blockId}</li>
+                sectionBlocksList.map((d, index) => {
+                  return <li key={index}>{d.userId} - {d.blockId}</li>
+                })
+              }
+              <div>resources</div>
+              {
+                resourceBlocksList.map((d, index) => {
+                  return <li key={index}>{d.userId} - {d.blockId}</li>
+                })
+              }
+              <div>css</div>
+              {
+                cssLock.map((d, index) => {
+                  return <li key={index}>{d.userId} - {d.blockId}</li>
+                })
+              }
+              <div>metadata</div>
+              {
+                metadataLock.map((d, index) => {
+                  return <li key={index}>{d.userId} - {d.blockId}</li>
                 })
               }
             </div>
@@ -72,6 +130,46 @@ class StoryView extends Component {
             {
               activedStory.resources &&
                 <ResourcesManager storyId={match.params.id} resources={activedStory.resources} />
+            }
+            {
+              activedStory.metadata &&
+                <div style={{border: '1px solid', width: '30%', float: 'left', marginRight: '20px'}}>
+                  <span>metadata settings</span>
+                  {
+                    metadataMap.metadata === undefined &&
+                      <button onClick={() => this.editLocation('metadata')}>edit metadata</button>
+                  }
+                  {
+                    metadataMap['metadata'] &&
+                    metadataMap['metadata'].userId !== userId &&
+                    <span style={{color: 'red'}}>-{metadataMap['metadata'].status}
+                    </span>
+                  }
+                  {
+                    metadataMap['metadata'] &&
+                    metadataMap['metadata'].userId === userId &&
+                    <button onClick={() => this.leaveLocation('metadata')}>leave metadata</button>
+                  }
+                </div>
+            }
+            {
+              activedStory.settings &&
+                <div style={{border: '1px solid', width: '30%', float: 'left', marginRight: '20px'}}>
+                  <span>css settings</span>
+                  {
+                    cssMap.settings === undefined &&
+                      <button onClick={() => this.editLocation('settings')}>edit css</button>
+                  }
+                  {
+                    cssMap['settings'] && cssMap['settings'].userId !== userId &&
+                    <span style={{color: 'red'}}>-{cssMap['settings'].status}
+                    </span>
+                  }
+                  {
+                    cssMap['settings'] && cssMap['settings'].userId === userId &&
+                    <button onClick={() => this.leaveLocation('settings')}>leave metadata</button>
+                  }
+                </div>
             }
           </div> :
           <span>story not exist</span>

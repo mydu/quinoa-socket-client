@@ -109,8 +109,8 @@ function users(state = USERS_DEFAULT_STATE, action) {
 function locking(state = LOCKING_DEFAULT_STATE, action) {
   const { payload } = action;
   let locks;
-  const DEFAULT_LOCKING = {
-    location: 'summary',
+  const DEFAULT_LOCKS = {
+    summary: true,
   };
   switch (action.type) {
     // case USER_CONNECTED:
@@ -137,7 +137,7 @@ function locking(state = LOCKING_DEFAULT_STATE, action) {
           ...state[payload.storyId],
           locks: {
             ...locks,
-            [payload.userId]: DEFAULT_LOCKING,
+            [payload.userId]: DEFAULT_LOCKS,
           },
         },
       };
@@ -162,9 +162,12 @@ function locking(state = LOCKING_DEFAULT_STATE, action) {
           locks: {
             ...locks,
             [payload.userId]: {
-              blockId: payload.sectionId,
-              status: 'active',
-              location: 'sections',
+              ...locks[payload.userId],
+              sections: {
+                blockId: payload.sectionId,
+                status: 'active',
+                location: 'sections',
+              },
             },
           },
         },
@@ -179,8 +182,11 @@ function locking(state = LOCKING_DEFAULT_STATE, action) {
           locks: {
             ...locks,
             [payload.userId]: {
-              ...payload,
-              status: 'active',
+              ...locks[payload.userId],
+              [payload.location]: {
+                ...payload,
+                status: 'active',
+              },
             },
           },
         },
@@ -195,8 +201,11 @@ function locking(state = LOCKING_DEFAULT_STATE, action) {
           locks: {
             ...locks,
             [payload.userId]: {
-              ...payload,
-              status: 'idle',
+              ...locks[payload.userId],
+              [payload.location]: {
+                ...payload,
+                status: 'idle',
+              },
             },
           },
         },
@@ -212,7 +221,10 @@ function locking(state = LOCKING_DEFAULT_STATE, action) {
           ...state[payload.storyId],
           locks: {
             ...locks,
-            [payload.userId]: DEFAULT_LOCKING,
+            [payload.userId]: {
+              ...locks[payload.userId],
+              [payload.location]: undefined,
+            },
           },
         },
       };
