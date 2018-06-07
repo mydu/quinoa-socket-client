@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
+import { bindActionCreators } from 'redux';
 import {connect} from 'react-redux';
 import {
   BrowserRouter as Router,
@@ -16,6 +17,11 @@ import StoryView from './containers/StoryView/StoryViewContainer';
 @connect(
   state => ({
     ...connectionsDuck.selector(state.connections),
+  }),
+  dispatch => ({
+    actions: bindActionCreators({
+      ...connectionsDuck,
+    }, dispatch)
   })
 )
 
@@ -27,6 +33,15 @@ class Application extends Component {
    * Renders the component
    * @return {ReactElement} component - the component
    */
+  componentWillReceiveProps(nextProps) {
+    const {userId} = nextProps;
+    if(userId !== this.props.userId) {
+      this.props.actions.createUser({
+        userId,
+        name: 'new user'
+      });
+    }
+  }
   render() {
     const {
       props: {

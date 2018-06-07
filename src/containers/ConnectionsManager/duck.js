@@ -17,6 +17,7 @@ const USER_CONNECTED = 'USER_CONNECTED';
 const USER_DISCONNECTING = 'USER_DISCONNECTING';
 const USER_DISCONNECTED = 'USER_DISCONNECTED';
 
+const CREATE_USER = 'CREATE_USER';
 
 export const LOGIN_STORY = 'LOGIN_STORY';
 
@@ -32,11 +33,9 @@ export const enterStory = payload => ({
   payload,
   meta: {
     remote: true,
-    request: true,
     room: payload.storyId,
   },
 });
-
 
 export const leaveStory = payload => ({
   type: LEAVE_STORY,
@@ -87,6 +86,15 @@ export const loginStory = payload => ({
   },
 });
 
+export const createUser = payload => ({
+  type: CREATE_USER,
+  payload,
+  meta: {
+    remote: true,
+    broadcast: true,
+  },
+});
+
 function users(state = USERS_DEFAULT_STATE, action) {
   const { payload } = action;
   switch (action.type) {
@@ -95,11 +103,20 @@ function users(state = USERS_DEFAULT_STATE, action) {
         ...state,
         userId: action.payload,
       };
+    case CREATE_USER:
+    case `${CREATE_USER}_BROADCAST`:
+      return {
+        ...state,
+        users: {
+          ...state.users,
+          [payload.userId]: payload,
+        },
+      };
     case USER_CONNECTED:
     case USER_DISCONNECTED:
       return {
         ...state,
-        ...payload.connections.users,
+        ...payload.users,
       };
     default:
       return state;
@@ -114,7 +131,7 @@ function locking(state = LOCKING_DEFAULT_STATE, action) {
   };
   switch (action.type) {
     // case USER_CONNECTED:
-    //   return payload.connections.locking;
+    //   return payload.locking;
     case `${ENTER_STORY}_INIT`:
       locks = (state[payload.storyId] && state[payload.storyId].locks) || {};
       return {
